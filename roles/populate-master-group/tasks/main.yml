@@ -1,0 +1,33 @@
+---
+# tasks file for roles/populate-master-group
+
+# IF user specifies a master node
+- name: set target from extra var
+  set_fact:
+    new_master: "{{ target }}"
+  when: 
+    - target is defined
+    - target == inventory_hostname
+
+# ELSE: if no extra var and we have a running master
+- name: show ps output
+  command: ps -C postgres -o args
+  register: output
+  ignore_errors: yes
+
+- set_fact:
+    new_master: "{{ inventory_hostname }}"
+  when:
+    - "'wal sender process replication' in output.stdout"
+    - target is not defined
+
+- group_by:
+    key: master
+  when: new_master is defined
+
+# ELSE: no master set so choose the first node
+- add_host:
+    name: "{{ ansible_play_hosts[0] }}"
+    groups: master
+  when: groups.master | length == 0
+  run_once: yes

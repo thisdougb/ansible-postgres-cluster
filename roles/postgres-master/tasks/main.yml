@@ -1,0 +1,23 @@
+---
+# tasks file for roles/postgres-master-repl
+
+# setup listen address in postgresql.conf
+- name: install master versio of postgresql.conf
+  template:
+    src: postgresql.conf.j2
+    dest: /var/lib/pgsql/data/postgresql.conf
+    owner: postgres
+    group: postgres
+    mode: 0600
+
+- name: restart postgres
+  service:
+    name: postgresql
+    state: restarted
+
+- name: create replication role
+  postgresql_user:
+    name: replication
+    password: 'password'
+    role_attr_flags: REPLICATION,LOGIN
+    state: present

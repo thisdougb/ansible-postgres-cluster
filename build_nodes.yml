@@ -1,0 +1,19 @@
+---
+- hosts: nodes
+  roles:
+    - populate-master-group
+
+- hosts: nodes
+  roles:
+    - postgres
+
+- hosts: master[0]
+  roles:
+    - postgres-init
+    - postgres-master
+
+- hosts: nodes:!master[0]
+  gather_facts: yes
+  serial: 1
+  roles:
+    - postgres-slave

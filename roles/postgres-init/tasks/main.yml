@@ -1,0 +1,33 @@
+---
+# tasks file for roles/postgres-init
+
+- name: check pgsql data dir
+  command: ls /var/lib/pgsql/data
+  register: contents
+
+# skip init if data exists
+- name: init postgres
+  command: initdb -D /var/lib/pgsql/data
+  become_user: postgres
+  when: contents.stdout == ""
+
+- name: ensure no recover.conf exists
+  file:
+    path: /var/lib/pgsql/data/recovery.conf
+    state: absent
+
+- name: deploy standard postgresql.conf file
+  copy:
+    src: postgresql.conf 
+    dest: /var/lib/pgsql/data/postgresql.conf
+
+- name: deploy standard pg_hba.conf file
+  copy:
+    src: pg_hba.conf 
+    dest: /var/lib/pgsql/data/pg_hba.conf
+
+- name: start postgres
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
